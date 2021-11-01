@@ -83,7 +83,7 @@ print(f"Best params: {trial.params}")
 #############
 import shap
 
-def score_out(X_pred, X_valid, y_valid, params, feature_importances=False, shap_values=False):
+def score_out(X_pred, X_valid, y_valid, params):
     model = TransformedTargetRegressor(
         regressor=lgb.LGBMRegressor(**params, objective='mae'),
         transformer=StandardScaler()
@@ -95,19 +95,7 @@ def score_out(X_pred, X_valid, y_valid, params, feature_importances=False, shap_
         early_stopping_rounds = 10, verbose=-1
     )
     preds = model.predict(X_pred)
-
-    feature_importance_df, shap_values_df = None, None
-
-    if feature_importances:
-        feature_importance_df = pd.DataFrame(
-            {'var':model.feature_name_, 'importance':model.feature_importances_}
-        )
-
-    if shap_values:
-        explainer = shap.TreeExplainer(model)
-        shap_values_df = explaner.shap_values(X_valid)
-
-    return preds, feature_importance_df, shap_values_df
+    return preds
 
 
 def create_output(df):
@@ -123,7 +111,7 @@ y_valid_pred, _, _ = score_out(X_valid, X_test, y_test, trial.params)
 mean_absolute_error(y_valid_pred, y_valid)
 
 # score out on the submission set
-preds, feature_importances, shap_values = score_out(X_submission, X_valid, y_valid, trial.params)
+preds = score_out(X_submission, X_valid, y_valid, trial.params)
 subm = pd.DataFrame(
     {
         'id': X_submission['id'].values,
@@ -140,7 +128,20 @@ create_output(subm)
 import shap
 import matplotlib.pyplot as plt
 
-#explainer = shap.TreeExplainer(model)
-#shap_values = explaner.shap_values(X_valid)
+model = lgb.LGBMRegressor(**params, objective='mae')
+
+model.fit(
+    X_train, y_train.values.ravel(),
+    eval_set = (X_valid, y_valid),
+    early_stopping_rounds = 10, verbose=-1
+)
+
+explainer = shap.TreeExplainer(model)
+shap_values = explaner.shap_values(X_valid)
 shap.summary_plot(shap_values, X_valid, show=False)
 plt.savefig('shap.png', dpi=150, bbox_inches='tight')
+
+# raw feature importances
+feature_importance_df = pd.DataFrame(
+    {'var':model.feature_name_, 'importance':model.feature_importances_}
+)
