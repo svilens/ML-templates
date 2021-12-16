@@ -81,7 +81,6 @@ print(f"Best params: {trial.params}")
 #############
 # SCORE OUT #
 #############
-import shap
 
 def score_out(X_pred, X_valid, y_valid, params):
     model = TransformedTargetRegressor(
@@ -128,7 +127,7 @@ create_output(subm)
 import shap
 import matplotlib.pyplot as plt
 
-model = lgb.LGBMRegressor(**params, objective='mae')
+model = lgb.LGBMRegressor(**trial.params, objective='mae')
 
 model.fit(
     X_train, y_train.values.ravel(),
@@ -137,7 +136,7 @@ model.fit(
 )
 
 explainer = shap.TreeExplainer(model)
-shap_values = explaner.shap_values(X_valid)
+shap_values = explainer.shap_values(X_valid)
 shap.summary_plot(shap_values, X_valid, show=False)
 plt.savefig('shap.png', dpi=150, bbox_inches='tight')
 
