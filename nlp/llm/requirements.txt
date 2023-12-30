@@ -8,3 +8,7 @@ tiktoken
 shap
 langchain
 better_profanity
+peft
+Pillow
+pytube
+decord
